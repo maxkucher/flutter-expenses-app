@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:tasks_app/providers/product.dart';
+import 'package:tasks_app/providers/products_provider.dart';
 
 class EditProductScreen extends StatefulWidget {
   static const routeName = '/edit-product';
@@ -15,13 +17,29 @@ class _EditProductScreenState extends State<EditProductScreen> {
   final _imageUrlFocusNode = FocusNode();
   final _form = GlobalKey<FormState>();
 
+  var _isInit = true;
   var _editedProduct =
       Product(id: null, title: '', price: 0, description: '', imageUrl: '');
+  var _isLoading = false;
 
   @override
   void initState() {
     _imageUrlFocusNode.addListener(_updateImageUrl);
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    if (_isInit) {
+      final productId = ModalRoute.of(context).settings.arguments as String;
+      if (productId != null) {
+        _editedProduct = Provider.of<ProductsProvider>(context, listen: false)
+            .findById(productId);
+        _imageUrlController.text = _editedProduct.imageUrl;
+      }
+    }
+    _isInit = false;
+    super.didChangeDependencies();
   }
 
   void _updateImageUrl() {
@@ -30,10 +48,29 @@ class _EditProductScreenState extends State<EditProductScreen> {
     }
   }
 
-  void _saveForm() {
+  void _saveForm() async {
     if (_form.currentState.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
       _form.currentState.save();
-      print(_editedProduct.toString());
+      final productsProvider =
+          Provider.of<ProductsProvider>(context, listen: false);
+
+      if (_editedProduct.id != null) {
+        productsProvider.updateProduct(_editedProduct);
+        setState(() {
+          _isLoading = false;
+        });
+        Navigator.of(context).pop();
+      } else {
+        productsProvider.addProduct(_editedProduct).then((_) {
+          setState(() {
+            _isLoading = true;
+          });
+          Navigator.of(context).pop();
+        });
+      }
     }
   }
 
@@ -46,13 +83,14 @@ class _EditProductScreenState extends State<EditProductScreen> {
         ],
         title: Text('Edit Product'),
       ),
-      body: Padding(
+      body:!_isLoading ? Padding(
         padding: const EdgeInsets.all(18.0),
         child: Form(
             key: _form,
             child: ListView(
               children: <Widget>[
                 TextFormField(
+                  initialValue: _editedProduct.title,
                   decoration: InputDecoration(
                     labelText: 'Title',
                   ),
@@ -76,6 +114,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
                   },
                 ),
                 TextFormField(
+                  initialValue: _editedProduct.price.toString(),
                   validator: (val) {
                     if (val.isEmpty) {
                       return 'Please endter  the price';
@@ -84,7 +123,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
                     if (enteredPrice == null) {
                       return 'Please enter a valid number';
                     }
-                    if (enteredPrice <= 0){
+                    if (enteredPrice <= 0) {
                       return 'The price should be greater than 0';
                     }
                     return null;
@@ -108,11 +147,12 @@ class _EditProductScreenState extends State<EditProductScreen> {
                   },
                 ),
                 TextFormField(
+                  initialValue: _editedProduct.description,
                   validator: (value) {
-                    if (value.isEmpty){
+                    if (value.isEmpty) {
                       return 'Please enter description';
                     }
-                    if (value.length < 10){
+                    if (value.length < 10) {
                       return 'Description length hould be greater than 10';
                     }
 
@@ -153,11 +193,11 @@ class _EditProductScreenState extends State<EditProductScreen> {
                     Expanded(
                       child: TextFormField(
                         validator: (value) {
-                          if(value.isEmpty){
+                          if (value.isEmpty) {
                             return 'Please enter the image url message';
                           }
-                          if(!value.startsWith('http')&&
-                             !value.startsWith('https')){
+                          if (!value.startsWith('http') &&
+                              !value.startsWith('https')) {
                             return 'Please enter valid URL';
                           }
                           return null;
@@ -184,6 +224,8 @@ class _EditProductScreenState extends State<EditProductScreen> {
                 )
               ],
             )),
+      ) : Center(
+        child: CircularProgressIndicator() ,
       ),
     );
 

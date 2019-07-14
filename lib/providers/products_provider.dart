@@ -19,26 +19,9 @@ class ProductsProvider with ChangeNotifier {
         'https://target.scene7.com/is/image/Target/GUEST_9413e897-f5a4-44ec-9989-d3a79f5351f3?wid=488&hei=488&fmt=pjpeg')
   ];
 
-/*
-  var _showFavouritesOnly = false;
-*/
 
- /* void showFavouritesOnly(){
-    _showFavouritesOnly = true;
-    notifyListeners();
-  }
-
-  void showAll(){
-    _showFavouritesOnly = false;
-    notifyListeners();
-  }*/
 
   List<Product> get items {
-  /*  if(_showFavouritesOnly){
-      return _items
-          .where((product) => product.isFavourite)
-          .toList();
-    }*/
     return [..._items];
   }
 

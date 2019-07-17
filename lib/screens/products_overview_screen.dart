@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tasks_app/providers/cart.dart';
+import 'package:tasks_app/providers/products_provider.dart';
 import 'package:tasks_app/widgets/app_drawer.dart';
 import 'package:tasks_app/widgets/badge.dart';
 import 'package:tasks_app/widgets/products_grid.dart';
@@ -16,6 +17,29 @@ class ProductsOverviewScreen extends StatefulWidget {
 
 class _ProductsOverviewScreenState extends State<ProductsOverviewScreen> {
   var _showOnlyFavs = false;
+  var _isInit = false;
+  var _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void didChangeDependencies() async {
+    if (!_isInit) {
+      try{
+        await Provider.of<ProductsProvider>(context).fetchProducts();
+      }catch (e){
+        print(e);
+      }
+      setState(() {
+        _isLoading = false;
+      });
+      _isInit = true;
+    }
+    super.didChangeDependencies();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,15 +62,15 @@ class _ProductsOverviewScreenState extends State<ProductsOverviewScreen> {
             },
             icon: Icon(Icons.more_vert),
             itemBuilder: (_) => [
-                  PopupMenuItem(
-                    child: Text('Only favourites'),
-                    value: FilterOptions.Favourites,
-                  ),
-                  PopupMenuItem(
-                    child: Text('Show All'),
-                    value: FilterOptions.All,
-                  ),
-                ],
+              PopupMenuItem(
+                child: Text('Only favourites'),
+                value: FilterOptions.Favourites,
+              ),
+              PopupMenuItem(
+                child: Text('Show All'),
+                value: FilterOptions.All,
+              ),
+            ],
           ),
           Consumer<Cart>(
             child: IconButton(
@@ -59,7 +83,9 @@ class _ProductsOverviewScreenState extends State<ProductsOverviewScreen> {
         ],
       ),
       drawer: AppDrawer(),
-      body: ProductsGrid(_showOnlyFavs),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : ProductsGrid(_showOnlyFavs),
     );
   }
 }

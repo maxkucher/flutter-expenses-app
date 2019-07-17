@@ -34,12 +34,12 @@ class UserProductListItem extends StatelessWidget {
               icon: Icon(Icons.delete),
               onPressed: () {
                 showDialog(context: context,
-                builder: (ctx) => AlertDialog(
+                builder: (ctx)  => AlertDialog(
                   title: Text('Deletion confirmation'),
                   content: Text('Do you want to dlete this product?'),
                   actions: <Widget>[
-                    FlatButton(onPressed: (){
-                      Provider.of<ProductsProvider>(context,listen: false)
+                    FlatButton(onPressed: () async {
+                      await Provider.of<ProductsProvider>(context,listen: false)
                           .deleteProduct(id);
                       Navigator.of(context)
                           .pop();

@@ -8,34 +8,40 @@ class ProductsProvider with ChangeNotifier {
   static const backendUrl =
       'https://turorial-12beb.firebaseio.com/products.json';
 
-  List<Product> _items = [
-    Product(
-        id: 'p1',
-        title: 'Black shit',
-        description: 'A red shit - it is pretty red',
-        price: 29.99,
-        imageUrl:
-            'https://www.celio.com/medias/sys_master/productMedias/productMediasImport/h0c/h18/9509185749022/product-media-import-1073434-1-weared.jpg?frz-v=1575'),
-    Product(
-        id: 'p2',
-        title: 'Red shit',
-        description: 'A red shit - it is pretty red',
-        price: 29.99,
-        imageUrl:
-            'https://target.scene7.com/is/image/Target/GUEST_9413e897-f5a4-44ec-9989-d3a79f5351f3?wid=488&hei=488&fmt=pjpeg')
-  ];
+  List<Product> _items = [];
+
+  Future<void> fetchProducts() async {
+    try {
+      _items.clear();
+      var response = await http.get(backendUrl);
+      print(json.decode(response.body));
+      (json.decode(response.body) as Map<String, dynamic>)
+          .forEach((key, value) {
+        _items.add(Product(
+            id: key,
+            title: value['title'],
+            description: value['description'],
+            price: value['price'],
+            imageUrl: value['imageUrl']));
+      });
+    } catch (e) {
+      print(e);
+      throw e;
+    } finally {
+      notifyListeners();
+    }
+  }
 
   Future<void> addProduct(Product product) async {
-    return http
-        .post(backendUrl,
-            body: json.encode({
-              'title': product.title,
-              'description': product.description,
-              'imageUrl': product.imageUrl,
-              'price': product.price,
-              'isFavourite': product.isFavourite
-            }))
-        .then((response) {
+    try {
+      var response = await http.post(backendUrl,
+          body: json.encode({
+            'title': product.title,
+            'description': product.description,
+            'imageUrl': product.imageUrl,
+            'price': product.price,
+            'isFavourite': product.isFavourite
+          }));
       final newProduct = Product(
           id: json.decode(response.body)['name'],
           title: product.title,
@@ -44,20 +50,52 @@ class ProductsProvider with ChangeNotifier {
           imageUrl: product.imageUrl);
       _items.add(newProduct);
       notifyListeners();
-    });
+      return Future.value();
+    } catch (e) {
+      print(e);
+      throw e;
+    }
   }
 
-  void updateProduct(Product product) {
+  Future<void> updateProduct(Product product) async {
     final prodIndex = findProductIndex(product.id);
     if (prodIndex >= 0) {
-      _items[prodIndex] = product;
+      final url =
+          'https://turorial-12beb.firebaseio.com/products/${product.id}.json';
+      try {
+        await http.post(url,
+            body: json.encode({
+              'title': product.title,
+              'description': product.description,
+              'imageUrl': product.imageUrl,
+              'price': product.price,
+              'isFavourite': product.isFavourite
+            }));
+        _items[prodIndex] = product;
+        notifyListeners();
+        return Future.value();
+      } catch (e) {
+        print(e);
+        throw e;
+      }
     }
-    notifyListeners();
   }
 
-  void deleteProduct(String productId) {
-    _items.removeWhere((product) => product.id == productId);
-    notifyListeners();
+  Future<void> deleteProduct(String productId) async {
+    final prodIndex = findProductIndex(productId);
+    if (prodIndex >= 0) {
+      final existingProduct = _items[prodIndex];
+      _items.removeWhere((product) => product.id == productId);
+      try {
+        await http.delete(
+            'https://turorial-12beb.firebaseio.com/products/$productId.json');
+        notifyListeners();
+      } catch (e) {
+        print(e);
+        _items.insert(prodIndex, existingProduct);
+        throw e;
+      }
+    }
   }
 
   int findProductIndex(String productId) {

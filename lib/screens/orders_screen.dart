@@ -5,8 +5,22 @@ import 'package:tasks_app/providers/orders_provider.dart';
 import 'package:tasks_app/widgets/app_drawer.dart';
 import 'package:tasks_app/widgets/order_list_item.dart';
 
-class OrdersScreen extends StatelessWidget {
+class OrdersScreen extends StatefulWidget {
   static const routeName = "/orders";
+
+  @override
+  _OrdersScreenState createState() => _OrdersScreenState();
+}
+
+class _OrdersScreenState extends State<OrdersScreen> {
+
+  @override
+  void didChangeDependencies() {
+    // TODO: implement didChangeDependencies
+    Provider.of<OrdersProvider>(context,listen: false)
+    .fetchAndSetOrder();
+    super.didChangeDependencies();
+  }
 
   @override
   Widget build(BuildContext context) {

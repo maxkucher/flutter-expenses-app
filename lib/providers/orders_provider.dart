@@ -10,12 +10,16 @@ class OrdersProvider with ChangeNotifier {
 
   List<OrderItem> _orders = [];
 
+  final String _token;
+
+  OrdersProvider(this._token,this._orders);
+
   List<OrderItem> get orders {
     return [..._orders];
   }
 
   Future<void> fetchAndSetOrder() async {
-    final res = await http.get(url);
+    final res = await http.get("$url?auth=$_token");
 
     final List<OrderItem> loadedOrders = [];
     if(res.body!=null){
@@ -42,27 +46,35 @@ class OrdersProvider with ChangeNotifier {
 
   Future<void> addOrder(List<CartItem> cartProducts, double total) async {
     final timestamp = DateTime.now();
-    final response = await http.post(url,
-        body: json.encode({
-          'amount': total,
-          'dateTime': timestamp.toIso8601String(),
-          'products': cartProducts
-              .map((cp) => {
-                    'id': cp.id,
-                    'title': cp.title,
-                    'quantity': cp.quantity,
-                    'price': cp.price
-                  })
-              .toList()
-        }));
-    print(json.encode(response));
-    _orders.insert(
-        0,
-        OrderItem(
-            id: json.decode(response.body)['name'],
-            amount: total,
-            products: cartProducts,
-            date: DateTime.now()));
-    notifyListeners();
+    try{
+      final response = await http.post("$url?auth=$_token",
+          body: json.encode({
+            'amount': total,
+            'dateTime': timestamp.toIso8601String(),
+            'products': cartProducts
+                .map((cp) => {
+              'id': cp.id,
+              'title': cp.title,
+              'quantity': cp.quantity,
+              'price': cp.price
+            })
+                .toList()
+          }));
+      if (response.statusCode <= 400){
+        print(json.encode(response.body));
+        _orders.insert(
+            0,
+            OrderItem(
+                id: json.decode(response.body)['name'],
+                amount: total,
+                products: cartProducts,
+                date: DateTime.now()));
+        notifyListeners();
+      } else throw Exception('Error in placing the order');
+    }catch(e){
+      print(e);
+    }
+
+
   }
 }

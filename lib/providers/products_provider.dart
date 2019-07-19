@@ -8,12 +8,16 @@ class ProductsProvider with ChangeNotifier {
   static const backendUrl =
       'https://turorial-12beb.firebaseio.com/products.json';
 
+  final _token;
+
+  ProductsProvider(this._token, this._items);
+
   List<Product> _items = [];
 
   Future<void> fetchProducts() async {
     try {
       _items.clear();
-      var response = await http.get(backendUrl);
+      var response = await http.get('$backendUrl?auth=$_token');
       print(json.decode(response.body));
       (json.decode(response.body) as Map<String, dynamic>)
           .forEach((key, value) {
@@ -61,7 +65,7 @@ class ProductsProvider with ChangeNotifier {
     final prodIndex = findProductIndex(product.id);
     if (prodIndex >= 0) {
       final url =
-          'https://turorial-12beb.firebaseio.com/products/${product.id}.json';
+          'https://turorial-12beb.firebaseio.com/products/${product.id}.json?auth=$_token';
       try {
         await http.post(url,
             body: json.encode({
@@ -88,7 +92,7 @@ class ProductsProvider with ChangeNotifier {
       _items.removeWhere((product) => product.id == productId);
       try {
         await http.delete(
-            'https://turorial-12beb.firebaseio.com/products/$productId.json');
+            'https://turorial-12beb.firebaseio.com/products/$productId.json?auth=$_token');
         notifyListeners();
       } catch (e) {
         print(e);

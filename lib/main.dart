@@ -20,32 +20,39 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [
-        ChangeNotifierProvider.value(
-            notifier: Auth()),
-        ChangeNotifierProvider.value(
-          notifier: ProductsProvider(),
-        ),
-        ChangeNotifierProvider.value(notifier: Cart()),
-        ChangeNotifierProvider.value(
-          notifier: OrdersProvider(),
-        )
-      ],
-      child: MaterialApp(
-        title: 'Flutter Demo',
-        theme: ThemeData(
-            primarySwatch: Colors.purple,
-            accentColor: Colors.deepOrange,
-            fontFamily: 'Lato'),
-        home: AuthScreen(),
-        routes: {
-          ProductDetailScreen.routeName: (ctx) => ProductDetailScreen(),
-          CartScreen.routeName: (ctx) => CartScreen(),
-          OrdersScreen.routeName: (ctx) => OrdersScreen(),
-          UserProductsScreen.routeName: (ctx) => UserProductsScreen(),
-          EditProductScreen.routeName: (ctx) => EditProductScreen()
-        },
-      ),
-    );
+        providers: [
+          ChangeNotifierProvider.value(value: Auth()),
+          ChangeNotifierProxyProvider<Auth, ProductsProvider>(
+              builder: (ctx, auth, previous) => ProductsProvider(
+                  auth.token,
+                  (previous == null || previous.items == null)
+                      ? []
+                      : previous.items)),
+          ChangeNotifierProvider.value(value: Cart()),
+          ChangeNotifierProxyProvider<Auth, OrdersProvider>(
+            builder: (ctx, auth, previous) => OrdersProvider(
+                auth.token,
+                (previous == null || previous.orders == null)
+                    ? []
+                    : previous.orders),
+          )
+        ],
+        child: Consumer<Auth>(
+          builder: (ctx, auth, _) => MaterialApp(
+            title: 'Flutter Demo',
+            theme: ThemeData(
+                primarySwatch: Colors.purple,
+                accentColor: Colors.deepOrange,
+                fontFamily: 'Lato'),
+            home: auth.isAuth ? ProductsOverviewScreen() : AuthScreen(),
+            routes: {
+              ProductDetailScreen.routeName: (ctx) => ProductDetailScreen(),
+              CartScreen.routeName: (ctx) => CartScreen(),
+              OrdersScreen.routeName: (ctx) => OrdersScreen(),
+              UserProductsScreen.routeName: (ctx) => UserProductsScreen(),
+              EditProductScreen.routeName: (ctx) => EditProductScreen()
+            },
+          ),
+        ));
   }
 }

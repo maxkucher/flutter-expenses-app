@@ -11,11 +11,11 @@ class Product with ChangeNotifier {
   final String imageUrl;
   bool isFavourite;
 
-  void toggleFavourite(String token) async {
+  void toggleFavourite(String token, String userId) async {
     final oldStatus = this.isFavourite;
     this.isFavourite = !this.isFavourite;
     try{
-     await   http.patch('https://turorial-12beb.firebaseio.com/products/$id.json?auth=$token',
+     await   http.patch('https://turorial-12beb.firebaseio.com/userFavourites/$userId/$id.json?auth=$token',
          body: json.encode({
            'isFavourite':this.isFavourite
          }));
